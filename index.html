@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>六合彩 Mark Six Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        secondary: '#E63946',
+                        markSixRed: '#E63946',
+                        markSixGold: '#FFD700'
+                    },
+                    animation: {
+                        'bounce-slow': 'bounce 1.5s infinite',
+                        'spin-slow': 'spin 3s linear infinite',
+                        'ping-slow': 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .ball {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-weight: bold;
+            margin: 5px;
+            color: white;
+            background-color: white;
+            border: 4px solid;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.2s ease-out;
+        }
+        
+        .ball.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        .bg-red-600 {
+            border-color: #dc2626;
+        }
+        
+        .bg-blue-600 {
+            border-color: #2563eb;
+        }
+        
+        .bg-green-600 {
+            border-color: #16a34a;
+        }
+
+        .ball-container {
+            perspective: 1000px;
+        }
+
+        .prize-text {
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* Dark mode styles */
+        .dark .ball {
+            color: white;
+            background-color: white;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        }
+
+        .dark .prize-text {
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .logo-ball {
+            border-color: #E63946;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <header class="flex flex-col items-center justify-center mb-8">
+            <div class="flex items-center mb-2">
+                <div class="logo-ball ball visible text-2xl animate-bounce-slow">6</div>
+                <h1 class="text-3xl md:text-4xl font-bold text-markSixRed dark:text-markSixGold ml-2 prize-text">六合彩 MARK SIX</h1>
+            </div>
+            <p class="text-gray-600 dark:text-gray-400 text-center">Generate your lucky numbers!</p>
+        </header>
+
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 mb-8">
+            <div class="flex flex-col sm:flex-row gap-4 items-center justify-center mb-6">
+                <div class="w-full sm:w-auto flex-1">
+                    <label for="numSets" class="block text-gray-700 dark:text-gray-300 mb-2 font-medium">Number of Sets:</label>
+                    <input type="number" id="numSets" min="1" max="10" value="1" 
+                        class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-primary">
+                </div>
+                <div class="w-full sm:w-auto mt-4 sm:mt-0">
+                    <button id="generateBtn" class="w-full px-6 py-3 bg-primary hover:bg-opacity-90 text-white rounded-lg font-medium transition duration-200 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                        </svg>
+                        Generate Numbers
+                    </button>
+                </div>
+            </div>
+
+            <div id="results" class="space-y-4"></div>
+        </div>
+
+        <div id="congratsContainer" class="fixed inset-0 flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-500 z-50">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-2xl transform transition-transform duration-500 scale-75 text-center max-w-md w-full mx-4">
+                <div class="text-markSixGold text-4xl mb-3">🎉</div>
+                <h2 class="text-2xl font-bold text-markSixRed dark:text-markSixGold mb-2">Congratulations!</h2>
+                <p class="text-gray-600 dark:text-gray-400 mb-4">Your lucky numbers have been generated.</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Good luck!</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check for dark mode
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const generateBtn = document.getElementById('generateBtn');
+            const numSetsInput = document.getElementById('numSets');
+            const resultsContainer = document.getElementById('results');
+            const congratsContainer = document.getElementById('congratsContainer');
+
+            // Get the official Mark Six color for a ball based on its number
+            function getBallColor(number) {
+                // Colors based on the exact pattern in the image
+                const redNumbers = [1, 7, 12, 13, 18, 23, 29, 30, 34, 35, 40, 45, 46];
+                const blueNumbers = [2, 3, 4, 8, 9, 10, 14, 19, 20, 24, 25, 26, 31, 32, 36, 37, 39, 42, 43, 48, 49];
+                const greenNumbers = [5, 6, 11, 15, 16, 17, 21, 22, 27, 28, 33, 38, 41, 44, 47];
+                
+                if (redNumbers.includes(number)) {
+                    return 'bg-red-600';
+                } else if (blueNumbers.includes(number)) {
+                    return 'bg-blue-600';
+                } else {
+                    return 'bg-green-600';
+                }
+            }
+
+            // Generate a set of 6 unique random numbers between 1-49
+            function generateMarkSixSet() {
+                const numbers = new Set();
+                while (numbers.size < 6) {
+                    numbers.add(Math.floor(Math.random() * 49) + 1);
+                }
+                return Array.from(numbers).sort((a, b) => a - b);
+            }
+
+            // Show confetti animation (simplified version)
+            function showConfetti() {
+                // Single burst with fewer particles
+                confetti({
+                    particleCount: 80,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    disableForReducedMotion: true
+                });
+            }
+
+            // Show congratulation message (simplified version)
+            function showCongratulations() {
+                congratsContainer.style.opacity = '1';
+                
+                setTimeout(() => {
+                    congratsContainer.style.opacity = '0';
+                }, 3000);
+            }
+
+            // Create and animate a new number set
+            function createNumberSet(setIndex, numbers) {
+                const setContainer = document.createElement('div');
+                setContainer.className = 'bg-gray-100 dark:bg-gray-700 rounded-lg p-4';
+                
+                const setHeader = document.createElement('div');
+                setHeader.className = 'text-lg font-medium mb-3';
+                setHeader.textContent = `Set ${setIndex + 1}`;
+                
+                const ballContainer = document.createElement('div');
+                ballContainer.className = 'flex flex-wrap justify-center ball-container';
+                
+                setContainer.appendChild(setHeader);
+                setContainer.appendChild(ballContainer);
+                
+                numbers.forEach((number, index) => {
+                    const ball = document.createElement('div');
+                    ball.className = `ball ${getBallColor(number)}`;
+                    ball.textContent = number;
+                    ballContainer.appendChild(ball);
+                    
+                    // Add visible class with a slight delay for sequential appearance
+                    setTimeout(() => {
+                        ball.classList.add('visible');
+                    }, index * 80);
+                });
+                
+                return setContainer;
+            }
+
+            generateBtn.addEventListener('click', () => {
+                let numSets = parseInt(numSetsInput.value);
+                if (isNaN(numSets) || numSets < 1) {
+                    numSets = 1;
+                    numSetsInput.value = 1;
+                } else if (numSets > 10) {
+                    numSets = 10;
+                    numSetsInput.value = 10;
+                }
+                
+                // Clear previous results
+                resultsContainer.innerHTML = '';
+                
+                // Disable button during animation
+                generateBtn.disabled = true;
+                generateBtn.classList.add('opacity-70');
+                
+                // Generate all sets at once without nested delays
+                const allSets = [];
+                for (let i = 0; i < numSets; i++) {
+                    const numbers = generateMarkSixSet();
+                    const setElement = createNumberSet(i, numbers);
+                    allSets.push(setElement);
+                }
+                
+                // Append all sets to the DOM at once
+                allSets.forEach(setElement => {
+                    resultsContainer.appendChild(setElement);
+                });
+                
+                // Show congratulations and confetti after a short delay
+                setTimeout(() => {
+                    showConfetti();
+                    showCongratulations();
+                    generateBtn.disabled = false;
+                    generateBtn.classList.remove('opacity-70');
+                }, 500);
+            });
+        });
+    </script>
+</body>
+</html>
