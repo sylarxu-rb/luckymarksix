@@ -175,26 +175,26 @@
 
             // Show confetti animation (enhanced version)
             function showConfetti() {
-                const duration = 2500;
+                const duration = 500;
                 const end = Date.now() + duration;
 
                 // First burst
                 confetti({
-                    particleCount: 100,
-                    spread: 70,
+                    particleCount: 10,
+                    spread: 30,
                     origin: { y: 0.6 }
                 });
 
                 // Staggered bursts
                 (function frame() {
                     confetti({
-                        particleCount: 25,
+                        particleCount: 5,
                         angle: 60,
                         spread: 55,
                         origin: { x: 0, y: 0.65 }
                     });
                     confetti({
-                        particleCount: 25,
+                        particleCount: 5,
                         angle: 120,
                         spread: 55,
                         origin: { x: 1, y: 0.65 }
